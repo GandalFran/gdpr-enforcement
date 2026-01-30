@@ -1,0 +1,160 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: broker
+    container_name: broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://127.0.0.1:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.0
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - broker
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: smartcity_audit
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=es-docker-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+
+  neo4j:
+    image: neo4j:4.4
+    container_name: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/adminpassword
+    volumes:
+      - neo4j_data:/data
+
+  # --- Application Services ---
+
+  audit-api:
+    build:
+      context: ../../
+      dockerfile: code/Dockerfile
+    container_name: audit-api
+    command: [ "uvicorn", "src.audit.api:app", "--host", "0.0.0.0", "--port", "8000" ]
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      PG_HOST: postgres
+
+  audit-monitor:
+    build:
+      context: ../../
+      dockerfile: code/Dockerfile
+    container_name: audit-monitor
+    command: [ "python", "code/src/audit/monitor.py" ]
+    depends_on:
+      - broker
+      - postgres
+    environment:
+      KAFKA_BROKER: broker:29092
+      PG_HOST: postgres
+
+  consumer-traffic:
+    build:
+      context: ../../
+      dockerfile: code/Dockerfile
+    container_name: consumer-traffic
+    command: [ "python", "code/src/processing/consumer.py", "--purpose", "traffic", "--group", "traffic-service" ]
+    depends_on:
+      - broker
+    environment:
+      KAFKA_BROKER: broker:29092
+
+  ingestion:
+    build:
+      context: ../../
+      dockerfile: code/Dockerfile
+    container_name: ingestion
+    command: [ "python", "code/src/ingestion/main.py", "--speed", "10.0" ]
+    depends_on:
+      - broker
+    environment:
+      KAFKA_BROKER: broker:29092
+
+  # Experiment Runner (One-off container)
+  experiment-runner:
+    build:
+      context: ../../
+      dockerfile: code/Dockerfile
+    container_name: experiment-runner
+    command: [ "python", "code/experiments/runner.py", "--skip-infra", "--docker-mode", "--experiment-name", "test" ]
+    depends_on:
+      - audit-api
+      - ingestion
+      - audit-monitor
+      - consumer-traffic
+    volumes:
+      - ../metrics:/app/code/metrics
+    environment:
+      AUDIT_API_URL: http://audit-api:8000
+
+volumes:
+  postgres_data:
+  es_data:
+  neo4j_data:

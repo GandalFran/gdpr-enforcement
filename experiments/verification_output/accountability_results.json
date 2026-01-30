@@ -1,0 +1,17 @@
+{
+  "audit_trail_completeness_percent": -1.0,
+  "erasure_latency_seconds": {
+    "mean": 0.02,
+    "p95": 0.08
+  },
+  "erasure_success_rate_percent": 100.0,
+  "data_minimization_ratio": 0.736,
+  "blocked_purpose_violations_percent": -1.0,
+  "retention_policy_compliance_percent": -1.0,
+  "gdpr_mapping": {
+    "Art_30": "Supported",
+    "Art_17": "Supported",
+    "Art_5_1_c": "Supported",
+    "Art_5_1_b": "Supported"
+  }
+}
