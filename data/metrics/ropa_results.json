@@ -1,0 +1,45 @@
+{
+  "experiment": "S4",
+  "latency": 8.5,
+  "activities_count": 5,
+  "ropa_content": {
+    "generated_at": "2026-01-30T10:09:20.581844",
+    "processing_activities": [
+      {
+        "processor": "traffic-service",
+        "data_category": "smartcity.traffic.raw",
+        "legal_basis": "Public Interest",
+        "retention": "24h",
+        "derived_from_audit_log": true
+      },
+      {
+        "processor": "other-service",
+        "data_category": "smartcity.environmental.raw",
+        "legal_basis": "Consent",
+        "retention": "24h",
+        "derived_from_audit_log": true
+      },
+      {
+        "processor": "env-service",
+        "data_category": "smartcity.traffic.raw",
+        "legal_basis": "Public Interest",
+        "retention": "24h",
+        "derived_from_audit_log": true
+      },
+      {
+        "processor": "urban-service",
+        "data_category": "smartcity.traffic.raw",
+        "legal_basis": "Public Interest",
+        "retention": "24h",
+        "derived_from_audit_log": true
+      },
+      {
+        "processor": "traffic-service",
+        "data_category": "smartcity.traffic.processed",
+        "legal_basis": "Public Interest",
+        "retention": "7d",
+        "derived_from_audit_log": true
+      }
+    ]
+  }
+}

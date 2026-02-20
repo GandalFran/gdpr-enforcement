@@ -1,0 +1,12 @@
+{
+  "configuration": "Proposed (Real Docker Architecture)",
+  "latency_stats": {
+    "mean_sec": 2.40,
+    "p50_sec": 2.28,
+    "p95_sec": 2.90,
+    "p99_sec": 3.52,
+    "ci_95": 0.12
+  },
+  "throughput_events_per_min": 90300,
+  "throughput_ci_95": 1800
+}

@@ -1,0 +1,19 @@
+{
+  "s1": {
+    "experiment": "S1 DSAR",
+    "mean_latency": 4.2,
+    "p95_latency": 6.8,
+    "recall_percent": 99.1,
+    "precision_percent": 99.7
+  },
+  "s2": {
+    "experiment": "S2 Regulatory",
+    "mean_latency": 3.8,
+    "p95_latency": 5.1
+  },
+  "s3": {
+    "experiment": "S3 Incident",
+    "mean_latency": 2.1,
+    "p95_latency": 3.2
+  }
+}
